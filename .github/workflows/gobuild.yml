@@ -1,0 +1,49 @@
+name: Build and Package Go Binaries
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          LATEST_TAG=$(git ls-remote --tags https://github.com/containers/skopeo.git \
+            | awk -F/ '{print $3}' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V \
+            | tail -n1)
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Checkout latest tag
+        uses: actions/checkout@v3
+        with:
+          repository: containers/skopeo
+          ref: ${{ steps.get_tag.outputs.latest_tag }}
+          
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libgpgme-dev btrfs-progs llvm-15-dev gcc musl-tools mingw-w64
+          
+      - name: Run Go Multi-Platform Build Action
+        id: build
+        uses: chihqiang/gobuild-action@main
+        with:
+          main_go: ./cmd/skopeo
+          archs: "linux/amd64 linux/arm64 linux/ppc64le darwin/amd64 darwin/arm64 windows/386 windows/amd64"
+          bin_name: skopeo
+          build_flags: "-mod=vendor '-buildmode=pie' -ldflags '-extldflags -static' -gcflags '' -tags 'exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp'"
+          add_files: |
+            README.md
+            LICENSE
+
+      - name: Upload release assets
+        uses: chihqiang/upload-asset-action@main
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          files: ${{ env.GOBUILD_FILES }}
