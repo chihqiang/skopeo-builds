@@ -1,7 +1,7 @@
 ## ▶️ Usage Releases
 
 ~~~
-wget -q --show-progress -O skopeo.tar.gz https://github.com/chihqiang/skopeo-builds/releases/download/v1.20.0/skopeo_darwin_arm64.tar.gz
+wget -q --show-progress -O skopeo.tar.gz https://github.com/chihqiang/skopeo-builds/releases/download/v1.21.0/skopeo_darwin_arm64.tar.gz
 tar -zxf skopeo.tar.gz 
 ./skopeo --version
 ~~~
@@ -12,7 +12,7 @@ Build docker
 
 ~~~
 docker build -t zhiqiangwang/skopeo:latest .
-docker build --build-arg SKOPEO_VERSION=v1.20.0 -t zhiqiangwang/skopeo:1.20.0 .
+docker build --build-arg SKOPEO_VERSION=v1.21.0 -t zhiqiangwang/skopeo:1.21.0 .
 ~~~
 
 Run Skopeo directly via Docker:

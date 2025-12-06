@@ -1,12 +1,12 @@
 # =====================
 # 构建阶段
 # =====================
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # 安装最小构建依赖
 RUN apk update && apk add gpgme btrfs-progs-dev llvm15-dev gcc musl-dev wget
 
-ARG SKOPEO_VERSION=v1.20.0
+ARG SKOPEO_VERSION=v1.21.0
 
 RUN cd /tmp \
     && wget https://github.com/containers/skopeo/archive/refs/tags/${SKOPEO_VERSION}.tar.gz -O skopeo.tar.gz \
