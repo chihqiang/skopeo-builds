@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${SKOPEO_VERSION:-"v1.21.0"}"
+VERSION="${SKOPEO_VERSION:-"v1.22.0"}"
 BASE_URL="https://github.com/chihqiang/skopeo-builds/releases/download/${VERSION}"
 INSTALL_DIR="/usr/local/bin"
 
