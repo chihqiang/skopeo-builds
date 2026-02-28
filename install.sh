@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${SKOPEO_VERSION:-"v1.22.0"}"
-BASE_URL="https://github.com/chihqiang/skopeo-builds/releases/download/${VERSION}"
-INSTALL_DIR="/usr/local/bin"
+VERSION="${SKOPEO_VERSION:-"latest"}"
+GH_REPO="chihqiang/skopeo-builds"
+# If version is latest, use latest release URL
+if [[ "$VERSION" == "latest" ]]; then
+    BASE_URL="https://github.com/${GH_REPO}/releases/latest/download/"
+else
+    BASE_URL="https://github.com/${GH_REPO}/releases/download/${VERSION}"
+fi
 
+INSTALL_DIR="/usr/local/bin"
 # Ensure temp dir is cleaned on exit or error
 TEMP_DIR=$(mktemp -d)
 echo "📁 Temporary directory: $TEMP_DIR" 
