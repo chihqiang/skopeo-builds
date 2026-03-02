@@ -38,12 +38,6 @@ cleanup() {
     rm -rf "$TEMP_DIR"
 }
 trap cleanup EXIT
-
-# -----------------------------
-# Detect OS
-# -----------------------------
-OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-
 # -----------------------------
 # Detect Architecture
 # -----------------------------
@@ -58,19 +52,21 @@ case "$ARCH" in
         ;;
 esac
 
+
 # -----------------------------
 # Map OS to file naming
 # -----------------------------
+OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 case "$OS" in
-    darwin) FILE="${BIN_NAME}_darwin_${ARCH}.tar.gz" ;;
-    linux)  FILE="${BIN_NAME}_linux_${ARCH}.tar.gz" ;;
+    darwin|linux)  # 用 | 分隔多个匹配项
+        filename="${BIN_NAME}_${OS}_${ARCH}.tar.gz"
+        ;;
     *)
         echo "❌ Unsupported OS: $OS"
         exit 1
         ;;
 esac
-
-DOWNLOAD_URL="${BASE_URL}/${FILE}"
+DOWNLOAD_URL="${BASE_URL}/${filename}"
 
 # -----------------------------
 # Already installed check
@@ -98,7 +94,7 @@ cd "$TEMP_DIR"
 # -----------------------------
 # Download binary
 # -----------------------------
-echo "⬇️  Downloading $FILE..."
+echo "⬇️  Downloading $filename..."
 curl -fL -o "${BIN_NAME}.tar.gz" "$DOWNLOAD_URL"
 
 # -----------------------------
