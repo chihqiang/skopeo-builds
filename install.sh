@@ -1,48 +1,87 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${SKOPEO_VERSION:-"latest"}"
+# -----------------------------
+# Binary name and installation directory
+# -----------------------------
+BIN_NAME="skopeo"
+INSTALL_DIR="/usr/local/bin"
+VERSION="${SKOPEO_VERSION:-latest}"
 GH_REPO="chihqiang/skopeo-builds"
-# If version is latest, use latest release URL
+
+# -----------------------------
+# Required command check
+# -----------------------------
+for cmd in curl tar sudo uname mktemp; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "❌ Required command not found: $cmd"
+        exit 1
+    fi
+done
+
+# -----------------------------
+# Build download URL
+# -----------------------------
 if [[ "$VERSION" == "latest" ]]; then
-    BASE_URL="https://github.com/${GH_REPO}/releases/latest/download/"
+    BASE_URL="https://github.com/${GH_REPO}/releases/latest/download"
 else
     BASE_URL="https://github.com/${GH_REPO}/releases/download/${VERSION}"
 fi
 
-INSTALL_DIR="/usr/local/bin"
-# Ensure temp dir is cleaned on exit or error
-TEMP_DIR=$(mktemp -d)
-echo "📁 Temporary directory: $TEMP_DIR" 
+# -----------------------------
+# Temp directory (auto cleanup)
+# -----------------------------
+TEMP_DIR="$(mktemp -d)"
+echo "📁 Temporary directory: $TEMP_DIR"
+
 cleanup() {
     rm -rf "$TEMP_DIR"
 }
 trap cleanup EXIT
 
+# -----------------------------
 # Detect OS
+# -----------------------------
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 
-# Detect ARCH
+# -----------------------------
+# Detect Architecture
+# -----------------------------
 ARCH="$(uname -m)"
 case "$ARCH" in
     x86_64) ARCH="amd64" ;;
     aarch64 | arm64) ARCH="arm64" ;;
     ppc64le) ARCH="ppc64le" ;;
-    *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
+    *)
+        echo "❌ Unsupported architecture: $ARCH"
+        exit 1
+        ;;
 esac
 
-# Map OS naming to download file naming
+# -----------------------------
+# Map OS to file naming
+# -----------------------------
 case "$OS" in
-    darwin) FILE="skopeo_darwin_${ARCH}.tar.gz" ;;
-    linux)  FILE="skopeo_linux_${ARCH}.tar.gz" ;;
-    *) echo "❌ Unsupported OS: $OS"; exit 1 ;;
+    darwin) FILE="${BIN_NAME}_darwin_${ARCH}.tar.gz" ;;
+    linux)  FILE="${BIN_NAME}_linux_${ARCH}.tar.gz" ;;
+    *)
+        echo "❌ Unsupported OS: $OS"
+        exit 1
+        ;;
 esac
 
 DOWNLOAD_URL="${BASE_URL}/${FILE}"
 
-# Check if Skopeo already exists
-if command -v skopeo >/dev/null 2>&1; then
-    echo "⚠️  Skopeo is already installed at $(command -v skopeo)"
+# -----------------------------
+# Already installed check
+# -----------------------------
+if command -v "${BIN_NAME}" >/dev/null 2>&1; then
+    echo "⚠️  ${BIN_NAME} already installed at $(command -v "${BIN_NAME}")"
+    read -r -p "Reinstall? [y/N]: " confirm
+    if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+        echo "Aborted."
+        exit 0
+    fi
 fi
 
 echo "👉 Detected OS: $OS"
@@ -50,25 +89,40 @@ echo "👉 Detected Architecture: $ARCH"
 echo "👉 Download URL: $DOWNLOAD_URL"
 echo "👉 Installing into: $INSTALL_DIR"
 
-# Ensure install dir exists
+# -----------------------------
+# Prepare install dir
+# -----------------------------
 sudo mkdir -p "$INSTALL_DIR"
 cd "$TEMP_DIR"
 
+# -----------------------------
 # Download binary
+# -----------------------------
 echo "⬇️  Downloading $FILE..."
-curl -fL -o skopeo.tar.gz "$DOWNLOAD_URL"
+curl -fL -o "${BIN_NAME}.tar.gz" "$DOWNLOAD_URL"
 
+# -----------------------------
 # Extract
+# -----------------------------
 echo "📦 Extracting..."
-tar -xzf skopeo.tar.gz
+tar -xzf "${BIN_NAME}.tar.gz"
 
+if [[ ! -f "${BIN_NAME}" ]]; then
+    echo "❌ Extracted binary not found!"
+    exit 1
+fi
+
+# -----------------------------
 # Install
+# -----------------------------
 echo "🚀 Installing..."
-sudo mv skopeo "$INSTALL_DIR/"
-sudo chmod +x "$INSTALL_DIR/skopeo"
+sudo install -m 0755 "${BIN_NAME}" "$INSTALL_DIR/"
 
-echo "✅ Skopeo installation completed!"
-echo "📌 Installed binary: $INSTALL_DIR/skopeo"
+echo "✅ ${BIN_NAME} installation completed!"
+echo "📌 Installed binary: ${INSTALL_DIR}/${BIN_NAME}"
 
-# Show installed version
-"$INSTALL_DIR/skopeo" --version
+# -----------------------------
+# Show version
+# -----------------------------
+echo "📦 Installed version:"
+"${INSTALL_DIR}/${BIN_NAME}" --version
