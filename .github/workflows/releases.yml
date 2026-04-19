@@ -1,4 +1,4 @@
-name: Build and Package Go Binaries
+name: releases build and docker image
 
 on:
   release:
@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y libgpgme-dev btrfs-progs llvm-15-dev gcc musl-tools mingw-w64
-          
+        
       - name: Run Go Multi-Platform Build Action
         id: build
         uses: chihqiang/gobuild-action@main
@@ -37,3 +37,28 @@ jobs:
         with:
           github_token: ${{ secrets.GH_TOKEN }}
           files: ${{ env.GOBUILD_FILES }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build and push multi-platform image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            zhiqiangwang/skopeo:${{ github.ref_name }}
+            zhiqiangwang/skopeo:latest
+          build-args: |
+            SKOPEO_VERSION=${{ github.ref_name }}
